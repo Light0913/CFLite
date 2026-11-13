@@ -145,19 +145,7 @@ cases:
 - 自定义 checker 采用与 testlib 相同的调用约定：`checker <input> <output> <answer>`，退出码 `0=AC / 1=WA / 2=SE`。
 - `contest.yaml` 关键字段：`start_at` / `end_at` / `registration` / `score`（`base_scores`、`wrong_penalty`、`decay.floor_ratio`）/ `rejudge.concurrency` / `hack` / `notifications`。
 
-## 八、与设计文档的差异
-
-1. **前端自包含**：HTMX / CodeMirror / Pico.css / Alpine.js 用自包含 CSS + 原生 JS + `<textarea>` 替代；
-   **KaTeX 本地内置**（`web/static/katex/`），无 CDN。
-2. **SQLite 用标准库 `sqlite3`**（而非 aiosqlite）。
-3. **AppContainer 可选降级**：非 SYSTEM 时回退 Job Object。
-4. **判题分发用 `subprocess.Popen` + 读取线程**（Windows 上避免双工命名管道受限）。
-5. **适配 starlette 1.x**：`TemplateResponse(request, name, context)`。
-6. **内置 YAML 解析器 `backend/miniyaml.py`**：不依赖 pyyaml（避免 Python 3.15 源码编译需要 MSVC），日期时间按字符串处理。
-7. **Markdown 用 `backend/minimd.py`**；代码转图片用 `backend/codeimage.py`（Windows GDI，纯 ctypes，无 Pillow）。
-8. **自定义 checker 不依赖 testlib.h**：接口一致，自带实现。
-
-## 九、常见问题
+## 八、常见问题
 
 - **提示「未找到 MinGW-w64」**：安装 winlibs UCRT 包，或设置 `MINGW_HOME`；若已有 `bin/judge.exe` 可不装。
 - **启动报缺依赖**：运行 `build.bat`；`vendor/` 已含纯 Python 依赖兜底。
