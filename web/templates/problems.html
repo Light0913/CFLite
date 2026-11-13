@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}题目列表 · CFLite{% endblock %}
+{% block content %}
+<div class="card">
+  <h2>题目列表</h2>
+  {% for p in problems %}
+  <div class="problem-row">
+    <div><a href="/problems/{{ p.id }}">{{ p.id }}</a></div>
+    <div><a href="/problems/{{ p.id }}">{{ p.title }}</a></div>
+    <div><span class="tag">{{ p.type }}</span></div>
+    <div class="muted">{{ p.time_ms }}ms / {{ p.memory_mb }}MB · 满分 {{ p.full_score }} 分</div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

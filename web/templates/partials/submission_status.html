@@ -1,0 +1,69 @@
+{% macro test_table(tests) %}
+<table>
+  <thead><tr><th>测试点</th><th>结果</th><th>时间</th><th>内存</th><th>反馈</th></tr></thead>
+  <tbody>
+    {% for t in tests %}
+    <tr data-stage="system_tests" data-name="{{ t.name }}">
+      <td>{{ t.name }}</td>
+      <td class="{{ t.verdict|verdict_class }}">{{ t.verdict|verdict_name }}</td>
+      <td>{{ t.time_ms if t.time_ms is not none else '—' }} ms</td>
+      <td>{{ t.memory_kb if t.memory_kb is not none else '—' }} KB</td>
+      <td class="checker-comment">{{ t.checker_comment or '' }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endmacro %}
+
+{# 赛时（contest running）对选手只显示 Pretests，系统测试详情赛后/管理员才可见 #}
+{% set show_system = (current_user and current_user.type == 'admin') or contest_status != 'running' %}
+
+{% if sub.status != 'done' %}
+{% set judging_now = (sub.pretest and (sub.pretest.get('current_test') or sub.pretest.get('running'))) or (sub.system and (sub.system.get('current_test') or sub.system.get('running'))) %}
+<div class="stage">
+  <h3>{% if judging_now %}Judging（评测中）{% else %}Waiting（等待评测）{% endif %}</h3>
+  <table>
+    <thead><tr><th>测试点</th><th>结果</th><th>时间</th><th>内存</th><th>反馈</th></tr></thead>
+    <tbody id="test-table">
+      {% for stage in ('pretests','system_tests') %}{% if stage == 'pretests' or show_system %}
+        {% set st = sub[stage] or {} %}
+        {% for t in st.get('running', []) %}
+        <tr data-stage="{{ stage }}" data-name="{{ t.name }}">
+          <td>{{ t.name }}</td>
+          <td class="{{ t.verdict|verdict_class }}">{{ t.verdict|verdict_name }}</td>
+          <td>{{ t.time_ms if t.time_ms is not none else '—' }} ms</td>
+          <td>{{ t.memory_kb if t.memory_kb is not none else '—' }} KB</td>
+          <td class="checker-comment">{{ t.checker_comment or '' }}</td>
+        </tr>
+        {% endfor %}
+        {% if st.get('current_test') %}
+        <tr data-stage="{{ stage }}" class="current">
+          <td>{{ st.current_test }}</td><td class="verdict-waiting">Judging</td><td>—</td><td>—</td><td></td>
+        </tr>
+        {% endif %}
+      {% endif %}{% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="stage" style="text-align:center">
+  <span class="badge-verdict badge-big {{ sub.verdict|badge_class }}">{{ sub.verdict|verdict_name }}</span>
+  <p class="hint">通过 {{ sub.passed_tests or 0 }} / {{ sub.total_tests or 0 }} 测试点 ·
+    {{ sub.time_ms or 0 }}ms · {{ sub.memory_kb or 0 }}KB</p>
+  {% if sub.checker_comment %}<pre class="checker-comment" style="text-align:left; white-space:pre-wrap">{{ sub.checker_comment }}</pre>{% endif %}
+</div>
+
+{% if sub.system and show_system %}
+<div class="stage">
+  <h3>System Tests（{{ sub.system.verdict|verdict_name }}，{{ sub.system.passed_tests }}/{{ sub.system.total_tests }}）</h3>
+  {{ test_table(sub.system.tests or []) }}
+</div>
+{% endif %}
+
+{% if sub.pretest %}
+<div class="stage">
+  <h3>Pretests（{{ sub.pretest.verdict|verdict_name }}，{{ sub.pretest.passed_tests }}/{{ sub.pretest.total_tests }}）</h3>
+  {{ test_table(sub.pretest.tests or []) }}
+</div>
+{% endif %}
+{% endif %}

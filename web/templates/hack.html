@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Hack #{{ hack.id }} · CFLite{% endblock %}
+{% block content %}
+<div class="card">
+  <h2>Hack #{{ hack.id }}</h2>
+  <div id="hack-status" data-hid="{{ hack.id }}" data-final="{{ '1' if hack.status == 'done' else '0' }}">
+    <table>
+      <tr><td>Hacker</td><td>{{ hack.hacker_name }}</td></tr>
+      <tr><td>Victim</td><td>{{ hack.victim_name }}（提交 #{{ hack.target_submission_id }}）</td></tr>
+      <tr><td>题目</td><td><a href="/problems/{{ hack.problem_id }}">{{ hack.problem_id }}</a></td></tr>
+      <tr><td>状态</td><td id="hack-verdict">
+        {% if hack.status == 'done' %}
+          <span class="badge-verdict {{ ('badge-ac' if hack.verdict=='SUCCESS' else ('badge-fail' if hack.verdict=='FAIL' else 'badge-gray')) }}">{{ hack.verdict|verdict_name }}</span>
+        {% else %}
+          <span class="verdict-waiting">Judging…</span>
+        {% endif %}
+      </td></tr>
+      {% if hack.status == 'done' %}
+      <tr><td>目标结果</td><td class="{{ hack.target_verdict|verdict_class }}">{{ hack.target_verdict|verdict_name }}</td></tr>
+      <tr><td>积分</td><td>{{ hack.points_delta or 0 }}</td></tr>
+      {% endif %}
+    </table>
+  </div>
+  {% if hack_input %}
+  <hr>
+  <h3>Hack 输入</h3>
+  <pre class="code-block">{{ hack_input }}</pre>
+  {% endif %}
+</div>
+{% endblock %}

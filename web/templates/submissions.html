@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}提交列表 · CFLite{% endblock %}
+{% block content %}
+<div class="card table-wrap">
+  <h2>提交列表</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>#</th><th>题目</th><th>用户</th><th>语言</th>
+        <th>Pretest</th><th>System</th><th>最终</th><th>时间</th><th>提交时间</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for s in subs %}
+      <tr>
+        <td class="num"><a href="/submissions/{{ s.id }}">{{ s.id }}</a></td>
+        <td><a href="/problems/{{ s.problem_id }}">{{ s.problem_title or s.problem_id }}</a></td>
+        <td>{{ s.username or '—' }}</td>
+        <td>{{ s.language }}</td>
+        <td class="{{ s.pretest_verdict|verdict_class }}">{{ s.pretest_verdict|verdict_name }}</td>
+        <td class="{{ s.system_verdict|verdict_class }}">{{ s.system_verdict|verdict_name }}</td>
+        <td class="{{ ('SKIPPED' if s.superseded else s.verdict)|verdict_class }}">{{ ('SKIPPED' if s.superseded else s.verdict)|verdict_name }}</td>
+        <td class="num">{{ s.time_ms or 0 }}ms</td>
+        <td class="muted">{{ s.created_at }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}{{ contest.title }} · CFLite{% endblock %}
+{% block content %}
+<div class="grid">
+  <div class="col-8">
+    <div class="card">
+      <h1>{{ contest.title }}</h1>
+      {% if contest.description %}<div class="md">{{ contest.description|markdown }}</div>{% endif %}
+    </div>
+    {% for a in contest.announcements %}
+    <div class="card">
+      <h3>📢 {{ a.title }}</h3>
+      <div class="md">{{ a.content|markdown }}</div>
+    </div>
+    {% endfor %}
+  </div>
+  <div class="col-4">
+    <div class="card sticky-side">
+      <h3>比赛信息</h3>
+      <p>开始：{{ contest.start_at }}</p>
+      <p>结束：{{ contest.end_at }}</p>
+      <p>状态：{{ contest_status }}</p>
+      {% if current_user and contest_status != 'finalized' %}
+        {% if registered %}
+        <p class="hint">✅ 已报名</p>
+        {% else %}
+        <form method="post" action="/api/contests/{{ contest.id }}/register">
+          <button class="btn" type="submit">报名参赛</button>
+        </form>
+        {% endif %}
+      {% endif %}
+      <p>
+        <a class="btn" href="/contests/{{ contest.id }}/problems">题目列表</a>
+        <a class="btn btn-secondary" href="/contests/{{ contest.id }}/scoreboard">排行榜</a>
+      </p>
+      {% if current_user and current_user.type == 'admin' and contest_status == 'running' %}
+      <hr>
+      <form method="post" action="/api/admin/contest/end"
+            onsubmit="return confirm('确定提前结束比赛？将触发赛后重测并封榜。')">
+        <button class="btn btn-danger" type="submit">提前结束比赛</button>
+      </form>
+      {% endif %}
+      {% if contest_status in ('draining','rejudging','finalized') %}
+      <p><a href="/contests/{{ contest.id }}/submissions">全部提交</a> · <a href="/contests/{{ contest.id }}/hacks">全部 Hack</a></p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="col-12">
+  <div class="card">
+    <h3>题目</h3>
+    {% if not problems %}<p class="hint">{% if current_user and not registered %}请先报名参赛，报名后可见题目{% else %}登录后可查看比赛题目（赛后公开）{% endif %}</p>{% endif %}
+    {% for p in problems %}
+    <div class="problem-row">
+      <div><a href="/problems/{{ p.id }}">{{ p.id }}</a></div>
+      <div><a href="/problems/{{ p.id }}">{{ p.title }}</a></div>
+      <div><span class="tag">{{ p.type }}</span></div>
+      <div class="muted">{{ p.time_ms }}ms / {{ p.memory_mb }}MB · 满分 {{ p.full_score }} 分</div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

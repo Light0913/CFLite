@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}管理 · 题目 · CFLite{% endblock %}
+{% block content %}
+<div class="admin-layout">
+  <nav class="admin-nav">
+    <a href="/admin/users">用户</a>
+    <a href="/admin/submissions">提交</a>
+    <a href="/admin/problems" class="active">题目</a>
+    <a href="/admin/settings">设置</a>
+  </nav>
+  <div>
+    <div class="card table-wrap">
+      <h2>题目管理</h2>
+      <table>
+        <thead><tr><th>#</th><th>标题</th><th>类型</th><th>操作</th></tr></thead>
+        <tbody>
+          {% for p in problems %}
+          <tr>
+            <td class="num">{{ p.id }}</td>
+            <td><a href="/problems/{{ p.id }}">{{ p.title }}</a></td>
+            <td><span class="tag">{{ p.type }}</span></td>
+            <td style="white-space:nowrap">
+              <form method="post" action="/api/admin/problems/{{ p.id }}/rejudge" style="display:inline">
+                <input type="hidden" name="run_pretests" value="false">
+                <button class="btn btn-sm btn-secondary" type="submit">整题重测</button>
+              </form>
+              <form method="post" action="/api/admin/problems/{{ p.id }}/rejudge" style="display:inline">
+                <input type="hidden" name="run_pretests" value="true">
+                <button class="btn btn-sm btn-danger" type="submit" onclick="return confirm('确认完整重测（含 pretests）？')">整题重测(含pretests)</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}排行榜 · CFLite{% endblock %}
+{% block content %}
+<div class="card table-wrap">
+  <h2>排行榜</h2>
+  <table class="scoreboard">
+    <thead>
+      <tr>
+        <th class="rank">#</th>
+        <th class="name">用户</th>
+        {% for p in problems %}<th>{{ p.id }}<br><span class="muted" style="font-weight:400;font-size:11px">{{ p.base_score }} 分</span></th>{% endfor %}
+        <th>Hack</th>
+        <th>总分</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in rows %}
+      <tr>
+        <td class="num">{{ r.rank }}</td>
+        <td class="name">{{ r.username }}</td>
+        {% for p in problems %}
+          {% set cell = r.problems.get(p.id) %}
+          <td class="prob {{ 'cell-ac' if cell and cell.status == 'ac' else ('cell-fail' if cell and cell.status in ('failed','hacked') else '') }}">
+            {% if cell and cell.status != 'unattempted' %}
+              {% if cell.locked %}<strong>{{ cell.score }}</strong>{% else %}{{ cell.score }}{% endif %}<br>
+              <span class="muted" style="font-size:11px">{{ cell.attempts }} 次</span>
+            {% else %}—{% endif %}
+          </td>
+        {% endfor %}
+        <td class="num" title="成功 {{ r.hack_success }} 次 / 失败 {{ r.hack_fail }} 次"><span class="hack-plus">+{{ r.hack_success }}</span> <span class="hack-minus">-{{ r.hack_fail }}</span></td>
+        <td class="num" style="font-weight:700">{{ r.total }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

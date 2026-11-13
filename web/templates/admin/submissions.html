@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}管理 · 提交 · CFLite{% endblock %}
+{% block content %}
+<div class="admin-layout">
+  <nav class="admin-nav">
+    <a href="/admin/users">用户</a>
+    <a href="/admin/submissions" class="active">提交</a>
+    <a href="/admin/problems">题目</a>
+    <a href="/admin/settings">设置</a>
+  </nav>
+  <div>
+    <div class="card table-wrap">
+      <h2>提交管理</h2>
+      <table>
+        <thead>
+          <tr><th>#</th><th>题目</th><th>用户</th><th>Pretest</th><th>System</th><th>最终</th><th>操作</th></tr>
+        </thead>
+        <tbody>
+          {% for s in subs %}
+          <tr>
+            <td class="num"><a href="/submissions/{{ s.id }}">{{ s.id }}</a></td>
+            <td>{{ s.problem_title }}</td>
+            <td>{{ s.username }}</td>
+            <td class="{{ s.pretest_verdict|verdict_class }}">{{ s.pretest_verdict|verdict_name }}</td>
+            <td class="{{ s.system_verdict|verdict_class }}">{{ s.system_verdict|verdict_name }}</td>
+            <td class="{{ ('SKIPPED' if s.superseded else s.verdict)|verdict_class }}">{{ ('SKIPPED' if s.superseded else s.verdict)|verdict_name }}</td>
+            <td style="white-space:nowrap">
+              <form method="post" action="/api/admin/submissions/{{ s.id }}/rejudge" style="display:inline">
+                <input type="hidden" name="run_pretests" value="true">
+                <button class="btn btn-sm btn-secondary" type="submit">重测</button>
+              </form>
+              <form method="post" action="/api/admin/submissions/{{ s.id }}/rejudge" style="display:inline">
+                <input type="hidden" name="run_pretests" value="false">
+                <button class="btn btn-sm btn-secondary" type="submit">重测(仅system)</button>
+              </form>
+              {% if s.verdict == 'CANCELLED' %}
+              <form method="post" action="/api/admin/submissions/{{ s.id }}/uncancel" style="display:inline">
+                <button class="btn btn-sm btn-secondary" type="submit">恢复</button>
+              </form>
+              {% else %}
+              <form method="post" action="/api/admin/submissions/{{ s.id }}/cancel" style="display:inline">
+                <button class="btn btn-sm btn-danger" type="submit">取消</button>
+              </form>
+              {% endif %}
+              <form method="post" action="/api/admin/submissions/{{ s.id }}/delete" style="display:inline"
+                    onsubmit="return confirm('确定删除提交 #{{ s.id }}？此操作不可恢复！')">
+                <button class="btn btn-sm btn-danger" type="submit">删除</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

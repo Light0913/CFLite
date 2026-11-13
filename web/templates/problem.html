@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}{{ prob.id }} · {{ prob.title }} · CFLite{% endblock %}
+{% block content %}
+<div class="grid">
+  <div class="col-7">
+    <div class="card">
+      <h1>{{ prob.id }} · {{ prob.title }}</h1>
+      <div class="hint">
+        类型 {{ prob.type }} · 时限 {{ prob.time_ms }}ms · 内存 {{ prob.memory_mb }}MB
+        {% if prob.language != 'zip' %} · 语言 {{ prob.language }}{% endif %}
+      </div>
+      <hr>
+      <div class="md">{% if statement %}{{ statement|markdown }}{% else %}(无题面){% endif %}</div>
+      {% if prob.attachments %}
+      <hr><h3>附件</h3>
+      {% for fn in prob.attachments %}
+        <a href="/api/problems/{{ prob.id }}/files/attachments/{{ fn }}">{{ fn }}</a>
+      {% endfor %}
+      {% endif %}
+      {% if prob.type == 'submit_answer' %}
+      <hr><a class="btn btn-secondary btn-sm" href="/api/problems/{{ prob.id }}/files/inputs/all.zip">下载输入数据 (inputs.zip)</a>
+      {% endif %}
+    </div>
+  </div>
+  <div class="col-5">
+    <div class="card sticky-side">
+      <h3>提交</h3>
+      {% if not current_user %}
+        <p class="hint">请先 <a href="/login">登录</a></p>
+      {% elif contest_status != 'running' %}
+        <p class="hint">比赛已结束或未开始，无法提交</p>
+      {% else %}
+        {% if prob.type == 'submit_answer' %}
+        <form method="post" action="/api/submit" enctype="multipart/form-data">
+          <input type="hidden" name="pid" value="{{ prob.id }}">
+          <div class="form-group"><label>answer.zip</label><input type="file" name="file" accept=".zip" required></div>
+          <button class="btn" type="submit">提交答案</button>
+        </form>
+        {% else %}
+        <form method="post" action="/api/submit" enctype="multipart/form-data">
+          <input type="hidden" name="pid" value="{{ prob.id }}">
+          <div class="form-group">
+            <label>代码（{{ prob.language }}）</label>
+            <textarea class="code-editor" name="code" spellcheck="false" placeholder="在此粘贴代码"></textarea>
+          </div>
+          <button class="btn" type="submit">提交</button>
+        </form>
+        {% endif %}
+
+        {% if prob.has_hack and current_user.type != 'banned' %}
+        <hr>
+        {% if my_ac %}
+          {% if not locked %}
+          <form method="post" action="/api/problems/{{ prob.id }}/lock"
+                onsubmit="return confirm('锁定后不可撤销，且该题将不能再提交解答。确定锁定本题？')">
+            <button class="btn btn-secondary" type="submit">🔒 锁定本题（不可逆，锁定后可 Hack）</button>
+          </form>
+          {% else %}
+          <p class="hint">✅ 已锁定 · <a href="/problems/{{ prob.id }}/sources">查看他人通过代码并 Hack</a></p>
+          {% endif %}
+        {% endif %}
+        {% endif %}
+      {% endif %}
+
+      {% if current_user and current_user.type == 'admin' %}
+      <hr>
+      <h3>管理</h3>
+      <form method="post" action="/api/admin/problems/{{ prob.id }}/rejudge"
+            onsubmit="return confirm('确定重测该题所有提交？')">
+        <button class="btn btn-secondary" type="submit">重测本题</button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

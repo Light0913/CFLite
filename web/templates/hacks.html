@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}{{ '全部 Hack' if show_all else '我的 Hack' }} · CFLite{% endblock %}
+{% block content %}
+<div class="card table-wrap">
+  <h2>{{ '全部 Hack' if show_all else '我的 Hack' }}</h2>
+  <table>
+    <thead>
+      <tr><th>#</th><th>Hacker</th><th>Victim</th><th>题目</th><th>目标</th><th>结果</th><th>积分</th><th>时间</th></tr>
+    </thead>
+    <tbody>
+      {% for h in hacks %}
+      <tr>
+        <td class="num"><a href="/hacks/{{ h.id }}">{{ h.id }}</a></td>
+        <td>{{ h.hacker_name }}</td>
+        <td>{{ h.victim_name }}</td>
+        <td>{{ h.problem_id }}</td>
+        <td class="num">#{{ h.target_submission_id }}</td>
+        <td>
+          <span class="{% if h.verdict == 'SUCCESS' %}verdict-ac{% elif h.verdict == 'FAIL' %}verdict-fail{% elif h.verdict == 'INVALID_INPUT' %}verdict-gray{% else %}verdict-se{% endif %}">{{ h.verdict|verdict_name }}</span>
+        </td>
+        <td class="num">{{ h.points_delta or 0 }}</td>
+        <td class="muted">{{ h.created_at }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

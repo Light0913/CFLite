@@ -1,0 +1,12 @@
+# 运行时数据，不进 Git
+users.json
+data/
+submissions/
+hacks/
+build/
+temp/
+bin/
+vendor/
+*.pyc
+__pycache__/
+*.log

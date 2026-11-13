@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}锁题后代码 · CFLite{% endblock %}
+{% block content %}
+<div class="card">
+  <h2>通过提交（锁定后可查看 / Hack）</h2>
+  {% if current_user and current_user.type != 'admin' %}<p class="hint">为防止抄袭，他人代码以<b>图片</b>形式显示，无法直接复制。</p>{% endif %}
+  {% if not subs %}<p class="hint">暂无通过的提交</p>{% endif %}
+  {% for s in subs %}
+  <div style="border-top:1px solid var(--border); padding-top:14px; margin-top:14px">
+    <p>
+      用户 {{ s.username }} · 提交 #{{ s.id }} ·
+      <span class="{{ s.verdict|verdict_class }}">{{ s.verdict|verdict_name }}</span> ·
+      <span class="muted">{{ s.created_at }}</span>
+      <a class="btn btn-danger btn-sm" href="/problems/{{ pid }}/hack/{{ s.id }}">Hack</a>
+    </p>
+    {% if s.code_text %}<pre class="code-block">{{ s.code_text }}</pre>{% endif %}
+    {% if s.code_img %}<img src="data:image/png;base64,{{ s.code_img }}" style="max-width:100%;border:1px solid var(--border)" alt="code">{% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}CFLite{% endblock %}</title>
+<link rel="stylesheet" href="/static/css/style.css">
+<link rel="stylesheet" href="/static/katex/katex.min.css">
+</head>
+<body>
+<header class="site-header">
+  <div class="logo"><a href="/">CFLite</a></div>
+  <div class="contest-name">{{ contest.title if contest else '无比赛' }}</div>
+  <div class="countdown" id="countdown"
+       data-start="{{ contest.start_at if contest else '' }}"
+       data-end="{{ contest.end_at if contest else '' }}"></div>
+  {% if current_user %}
+  <div class="bell" id="notif-bell">
+    🔔<span class="badge" id="notif-badge"></span>
+    <div class="notif-dropdown" id="notif-dropdown"></div>
+  </div>
+  {% endif %}
+  <div class="user-menu">
+    {% if current_user %}
+      <a href="/settings">{{ current_user.username }}</a>
+      · <a href="/submissions">我的提交</a>
+      {% if current_user.type == 'admin' %} · <a href="/admin/users">管理</a>{% endif %}
+      · <a href="#" onclick="fetch('/api/logout',{method:'POST'}).then(()=>location='/login');return false;">退出</a>
+    {% else %}
+      <a href="/login">登录</a>
+    {% endif %}
+  </div>
+</header>
+
+{% if current_user and contest and show_contest_nav %}
+<nav class="contest-nav">
+  <a href="/contests/{{ contest.id }}/problems">题目</a>
+  <a href="/submissions">我的提交</a>
+  <a href="/contests/{{ contest.id }}/hacks">Hack 记录</a>
+  <a href="/contests/{{ contest.id }}/scoreboard">排行榜</a>
+  {% if current_user.type == 'admin' %}
+  <a href="/contests/{{ contest.id }}/submissions">查看所有提交</a>
+  {% endif %}
+</nav>
+{% endif %}
+
+{% if contest_status == 'scheduled' %}
+<div class="contest-banner">比赛尚未开始</div>
+{% elif contest_status == 'running' %}
+<div class="contest-banner">比赛进行中</div>
+{% elif contest_status in ('draining','rejudging') %}
+<div class="contest-banner">比赛已结束，正在评测 / 重测</div>
+{% elif contest_status == 'finalized' %}
+<div class="contest-banner">比赛已结束</div>
+{% endif %}
+
+<main class="main">
+{% block content %}{% endblock %}
+</main>
+
+<footer class="footer">CFLite · 单机判题系统 · © 2026</footer>
+
+<script src="/static/js/app.js"></script>
+<script>
+(function(){
+  var cd = document.getElementById('countdown');
+  if (!cd) return;
+  function fmt(s){ if(s<0)s=0; var h=Math.floor(s/3600),m=Math.floor(s%3600/60),sec=s%60;
+    return (h>0?h+'h ':'')+m+'m '+sec+'s'; }
+  function upd(){
+    var end = cd.getAttribute('data-end'), start = cd.getAttribute('data-start');
+    if (!end){ cd.textContent=''; return; }
+    var t = new Date(end), s = new Date(start);
+    if (isNaN(t.getTime())){ cd.textContent = end; return; }
+    var now = new Date();
+    if (!isNaN(s.getTime()) && now < s){ cd.textContent='距开始 '+fmt(Math.floor((s-now)/1000)); }
+    else if (now < t){ cd.textContent='距结束 '+fmt(Math.floor((t-now)/1000)); }
+    else { cd.textContent='已结束'; }
+  }
+  upd(); setInterval(upd,1000);
+})();
+</script>
+<script src="/static/katex/katex.min.js"></script>
+<script src="/static/katex/auto-render.min.js"></script>
+<script>
+(function(){
+  function renderMath(){
+    if (!window.renderMathInElement) return;
+    try {
+      renderMathInElement(document.body, {
+        delimiters: [
+          {left: "$$", right: "$$", display: true},
+          {left: "$", right: "$", display: false},
+          {left: "\\(", right: "\\)", display: false},
+          {left: "\\[", right: "\\]", display: true}
+        ],
+        throwOnError: false,
+        ignoredTags: ["script", "noscript", "style", "textarea", "pre", "code", "option"]
+      });
+    } catch (e) {}
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", renderMath);
+  else renderMath();
+})();
+</script>
+</body>
+</html>

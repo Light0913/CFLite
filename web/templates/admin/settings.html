@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}管理 · 设置 · CFLite{% endblock %}
+{% block content %}
+<div class="admin-layout">
+  <nav class="admin-nav">
+    <a href="/admin/users">用户</a>
+    <a href="/admin/submissions">提交</a>
+    <a href="/admin/problems">题目</a>
+    <a href="/admin/settings" class="active">设置</a>
+  </nav>
+  <div>
+    <div class="settings-card">
+      <h3>注册通道</h3>
+      <p>
+        当前状态：
+        {% if setting.enabled %}<span class="status-enabled">● 已开启</span>{% else %}<span class="status-disabled">○ 已关闭</span>{% endif %}
+      </p>
+      {% if setting.close_at %}<p class="hint">注册截止时间：{{ setting.close_at }}</p>{% endif %}
+      <p class="hint">
+        最后修改：{% if setting.updated_by_name %}{{ setting.updated_by_name }}，{{ setting.updated_at }}{% else %}从未修改（使用 yaml 初始值）{% endif %}
+      </p>
+      <button id="toggle-reg" class="btn {{ 'btn-danger' if setting.enabled else '' }}"
+        data-enabled="{{ 'true' if setting.enabled else 'false' }}">
+        {{ '关闭注册通道' if setting.enabled else '开启注册通道' }}
+      </button>
+    </div>
+
+    <div class="settings-card">
+      <h3>操作审计日志（最近 20 条）</h3>
+      <table>
+        <thead><tr><th>时间</th><th>管理员</th><th>操作</th><th>对象</th><th>旧值</th><th>新值</th></tr></thead>
+        <tbody>
+          {% for a in audits %}
+          <tr>
+            <td class="muted">{{ a.created_at }}</td>
+            <td>{{ a.admin_name }}</td>
+            <td>{{ a.action }}</td>
+            <td>{{ a.target }}</td>
+            <td>{{ a.old_value or '—' }}</td>
+            <td>{{ a.new_value or '—' }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="6" class="muted">暂无记录</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var btn = document.getElementById('toggle-reg');
+  if (!btn) return;
+  btn.addEventListener('click', function(){
+    var enabled = btn.getAttribute('data-enabled') === 'true';
+    fetch('/api/admin/settings/registration', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({enabled: !enabled})
+    }).then(function(r){ return r.json(); }).then(function(d){
+      location.reload();
+    }).catch(function(){ alert('操作失败'); });
+  });
+})();
+</script>
+{% endblock %}

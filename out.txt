@@ -1,0 +1,7 @@
+CFLite 启动成功，访问 http://127.0.0.1:8011
+INFO:     127.0.0.1:49943 - "POST /api/login HTTP/1.1" 303 See Other
+INFO:     127.0.0.1:49944 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49945 - "GET /submissions/6 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49946 - "POST /api/login HTTP/1.1" 303 See Other
+INFO:     127.0.0.1:49947 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49948 - "GET /submissions/6 HTTP/1.1" 200 OK

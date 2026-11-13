@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}账号设置 · CFLite{% endblock %}
+{% block content %}
+<div class="center-page">
+  <div class="card center-card wide">
+    <h2>账号设置</h2>
+    <p class="hint">ID：{{ current_user.id }} · 用户名：{{ current_user.username }} · 类型：{{ current_user.type }}</p>
+    {% if request.query_params.get('ok') == 'username' %}<div class="alert alert-success">用户名已修改</div>{% endif %}
+    {% if request.query_params.get('ok') == 'password' %}<div class="alert alert-success">密码已修改</div>{% endif %}
+
+    <h3>修改用户名</h3>
+    <form method="post" action="/api/settings/username">
+      <div class="form-group"><label>新用户名</label><input type="text" name="new_username" required
+        pattern="[a-zA-Z0-9_-]{1,32}"></div>
+      <div class="form-group"><label>当前密码</label><input type="password" name="current_password" required></div>
+      <button class="btn" type="submit">修改用户名</button>
+    </form>
+
+    <hr style="margin:20px 0">
+
+    <h3>修改密码</h3>
+    <form method="post" action="/api/settings/password">
+      <div class="form-group"><label>当前密码</label><input type="password" name="current_password" required></div>
+      <div class="form-group"><label>新密码</label><input type="password" name="new_password" required minlength="6" maxlength="64"></div>
+      <div class="form-group"><label>确认新密码</label><input type="password" name="new_password_confirm" required></div>
+      <button class="btn" type="submit">修改密码</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

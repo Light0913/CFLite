@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}CFLite{% endblock %}
+{% block content %}
+{% if contest %}
+<div class="card" style="max-width:640px;margin:40px auto;text-align:center">
+  <h1>{{ contest.title }}</h1>
+  <p class="hint">开始：{{ contest.start_at }} · 结束：{{ contest.end_at }}</p>
+  <p class="hint">状态：{{ contest_status }}</p>
+  <a class="btn" href="/contests/{{ contest.id }}">进入比赛</a>
+</div>
+{% else %}
+<div class="card">暂无比赛</div>
+{% endif %}
+{% endblock %}

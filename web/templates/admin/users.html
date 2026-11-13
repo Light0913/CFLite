@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}管理 · 用户 · CFLite{% endblock %}
+{% block content %}
+<div class="admin-layout">
+  <nav class="admin-nav">
+    <a href="/admin/users" class="active">用户</a>
+    <a href="/admin/submissions">提交</a>
+    <a href="/admin/problems">题目</a>
+    <a href="/admin/settings">设置</a>
+  </nav>
+  <div>
+    <div class="card">
+      <h2>用户管理</h2>
+      <form method="post" action="/api/admin/users" style="display:flex;gap:10px;margin-bottom:16px">
+        <input type="text" name="username" placeholder="用户名" required>
+        <input type="password" name="password" placeholder="密码" required>
+        <select name="type_"><option value="default">default</option><option value="admin">admin</option><option value="banned">banned</option></select>
+        <button class="btn" type="submit">新建</button>
+      </form>
+      <table>
+        <thead><tr><th>ID</th><th>用户名</th><th>类型</th><th>操作</th></tr></thead>
+        <tbody>
+          {% for u in users %}
+          <tr>
+            <td class="num">{{ u.id }}</td>
+            <td>{{ u.username }}</td>
+            <td>
+              <form method="post" action="/api/admin/users/{{ u.id }}/type" style="display:inline-flex;gap:6px">
+                <select name="type_">
+                  {% for t in ('default','admin','banned') %}
+                  <option value="{{ t }}" {% if u.type == t %}selected{% endif %}>{{ t }}</option>
+                  {% endfor %}
+                </select>
+                <button class="btn btn-sm btn-secondary" type="submit">改</button>
+              </form>
+            </td>
+            <td>
+              <form method="post" action="/api/admin/users/{{ u.id }}/password" style="display:inline-flex;gap:6px">
+                <input type="text" name="password" placeholder="新密码" required>
+                <button class="btn btn-sm btn-secondary" type="submit">重置密码</button>
+              </form>
+              {% if u.id != current_user.id %}
+              <form method="post" action="/api/admin/users/{{ u.id }}/delete" style="display:inline">
+                <button class="btn btn-sm btn-danger" type="submit" onclick="return confirm('确认删除？')">删除</button>
+              </form>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,17 @@
+id: 1002
+title: A × B Problem
+type: default
+language: cpp23
+time: 1s
+memory: 256m
+compile_time: 10s
+checker_type: testlib
+checker: checker.cpp
+validator: validator.cpp
+cases:
+  pretests:
+    - {input: 1.in, output: 1.out}
+  system_tests:
+    - {input: 2.in, output: 2.out}
+    - {input: 3.in, output: 3.out}
+    - {input: hack_000002.in, output: hack_000002.out, source: hack, hack_id: 2, created_at: "2026-11-13T23:12:41"}
