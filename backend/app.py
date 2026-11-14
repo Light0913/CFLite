@@ -891,13 +891,12 @@ def _register_admin_routes(app: FastAPI) -> None:
     async def admin_set_type(uid: int, type_: str = Form(...), u: dict = Depends(require_admin)):
         if uid == u["id"]:
             raise HTTPException(400, "不能修改自己的用户类型")
-        old = state.user_store.get(uid)
+        old_type = (state.user_store.get(uid) or {}).get("type")
         try:
             state.user_store.update_type(uid, type_)
         except ValueError as e:
             raise HTTPException(400, str(e))
-        state.db.write_audit_log(u["id"], "set_user_type", f"user:{uid}",
-                                 (old or {}).get("type"), type_)
+        state.db.write_audit_log(u["id"], "set_user_type", f"user:{uid}", old_type, type_)
         return RedirectResponse("/admin/users", status_code=303)
 
     @app.post("/api/admin/users/{uid}/password")
