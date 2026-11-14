@@ -404,24 +404,6 @@ def _register_routes(app: FastAPI) -> None:
             (cid, u["id"], now_iso()))
         return RedirectResponse(f"/contests/{cid}", status_code=303)
 
-    @app.get("/contests/{cid}/problems", response_class=HTMLResponse)
-    async def problems_page(request: Request, cid: str, u: dict | None = Depends(current_user)):
-        contest = state.contest_repo.current()
-        if not contest or contest["id"] != cid:
-            raise HTTPException(404)
-        if not can_access_problems(u, contest):
-            return RedirectResponse("/login" if not u else f"/contests/{contest['id']}", status_code=303)
-        problems = state.problem_repo.all()
-        score_cfg = contest.get("score") or {}
-        base_scores = score_cfg.get("base_scores") or {}
-        for p in problems:
-            p["base_score"] = int(base_scores.get(p["id"], 0))
-            p["full_score"] = scoring.decayed_full_score(
-                score_cfg=score_cfg, base_score=p["base_score"],
-                start_at=contest.get("start_at"), end_at=contest.get("end_at"))
-        return templates.TemplateResponse(request, "problems.html", _ctx(request, u,
-            problems=problems))
-
     @app.get("/problems/{pid}", response_class=HTMLResponse)
     async def problem_page(request: Request, pid: int, u: dict | None = Depends(current_user)):
         prob = state.problem_repo.get(pid)

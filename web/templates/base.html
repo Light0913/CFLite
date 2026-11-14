@@ -34,13 +34,13 @@
 
 {% if current_user and contest and show_contest_nav %}
 <nav class="contest-nav">
-  <a href="/contests/{{ contest.id }}/problems">题目</a>
+  <a href="/contests/{{ contest.id }}">比赛介绍</a>
   <a href="/submissions">我的提交</a>
-  <a href="/contests/{{ contest.id }}/hacks">Hack 记录</a>
-  <a href="/contests/{{ contest.id }}/scoreboard">排行榜</a>
   {% if current_user.type == 'admin' or contest_status in ('draining','rejudging','finalized') %}
   <a href="/contests/{{ contest.id }}/submissions">查看所有提交</a>
   {% endif %}
+  <a href="/contests/{{ contest.id }}/hacks">Hack 记录</a>
+  <a href="/contests/{{ contest.id }}/scoreboard">排行榜</a>
 </nav>
 {% endif %}
 

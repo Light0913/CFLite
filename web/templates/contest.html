@@ -29,10 +29,6 @@
         </form>
         {% endif %}
       {% endif %}
-      <p>
-        <a class="btn" href="/contests/{{ contest.id }}/problems">题目列表</a>
-        <a class="btn btn-secondary" href="/contests/{{ contest.id }}/scoreboard">排行榜</a>
-      </p>
       {% if current_user and current_user.type == 'admin' and contest_status == 'running' %}
       <hr>
       <form method="post" action="/api/admin/contest/end"
