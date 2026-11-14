@@ -208,10 +208,50 @@
     }, 5000);
   }
 
+  // 为 Markdown 代码块（样例输入/输出等）添加复制按钮
+  function initCodeCopy() {
+    document.querySelectorAll(".md pre").forEach(function (pre) {
+      if (pre.parentNode && pre.parentNode.classList && pre.parentNode.classList.contains("code-wrap")) return;
+      var wrap = document.createElement("div");
+      wrap.className = "code-wrap";
+      pre.parentNode.insertBefore(wrap, pre);
+      wrap.appendChild(pre);
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "btn btn-secondary btn-sm copy-btn";
+      btn.textContent = "复制";
+      btn.addEventListener("click", function () {
+        var text = pre.innerText;
+        function done() {
+          btn.textContent = "已复制";
+          setTimeout(function () { btn.textContent = "复制"; }, 1500);
+        }
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(done).catch(function () { fallback(); });
+        } else {
+          fallback();
+        }
+        function fallback() {
+          var ta = document.createElement("textarea");
+          ta.value = text;
+          ta.style.position = "fixed";
+          ta.style.opacity = "0";
+          document.body.appendChild(ta);
+          ta.select();
+          try { document.execCommand("copy"); } catch (e) {}
+          document.body.removeChild(ta);
+          done();
+        }
+      });
+      wrap.appendChild(btn);
+    });
+  }
+
   document.addEventListener("DOMContentLoaded", function () {
     initBell();
     initSubmissionStream();
     initHackStream();
     initRegistrationPolling();
+    initCodeCopy();
   });
 })();

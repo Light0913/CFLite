@@ -202,6 +202,11 @@ tr.waiting td { color: var(--muted); }
 pre.code-block { background: #f6f8fa; border: 1px solid var(--border); border-radius: 6px;
   padding: 12px 14px; overflow: auto; font: 13px/1.5 Consolas, monospace; white-space: pre-wrap; }
 
+/* Markdown 代码块复制按钮 */
+.code-wrap { position: relative; }
+.code-wrap .copy-btn { position: absolute; top: 6px; right: 6px; z-index: 2; }
+.md pre { padding-right: 64px; }
+
 /* ---------- Markdown 渲染 ---------- */
 .md { line-height: 1.75; }
 .md h1, .md h2, .md h3, .md h4 { margin: 20px 0 10px; line-height: 1.3; }
