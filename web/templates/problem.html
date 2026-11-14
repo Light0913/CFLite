@@ -29,7 +29,7 @@
         <p class="hint">请先 <a href="/login">登录</a></p>
       {% elif contest_status == 'scheduled' %}
         <p class="hint">比赛未开始，无法提交</p>
-      {% elif locked %}
+      {% elif locked and contest_status == 'running' %}
         <p class="hint">该题已锁定，无法再提交解答（只能提交 Hack）。</p>
         <p class="hint">✅ 已锁定 · <a href="/problems/{{ prob.id }}/sources">查看他人通过代码并 Hack</a></p>
       {% else %}

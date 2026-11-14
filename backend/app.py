@@ -439,7 +439,7 @@ def _register_routes(app: FastAPI) -> None:
         prob = state.problem_repo.get(pid)
         if not prob:
             raise HTTPException(404, "题目不存在")
-        if hack.is_locked(contest["id"], u["id"], pid):
+        if status == "running" and hack.is_locked(contest["id"], u["id"], pid):
             raise HTTPException(403, "该题已锁定，只能提交 Hack，不能再提交解答")
 
         now = now_iso()
