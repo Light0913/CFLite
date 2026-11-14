@@ -96,8 +96,25 @@ def main() -> None:
 
     app = create_app()
     print("CFLite 启动成功，访问 http://127.0.0.1:%d" % port)
-    # timeout_graceful_shutdown：SSE 等长连接不会主动断开，限制关服等待时间，避免 Ctrl+C 后卡很久
-    uvicorn.run(app, host=host, port=port, log_level="info", timeout_graceful_shutdown=3)
+
+    from backend import sse
+
+    config = uvicorn.Config(app, host=host, port=port, log_level="info",
+                            timeout_graceful_shutdown=3)
+    server = uvicorn.Server(config)
+    _orig_handle_exit = server.handle_exit
+
+    def _handle_exit(sig, frame):
+        # Ctrl+C / SIGTERM：先给所有 SSE 长连接发关闭哨兵，让它们立刻结束，
+        # 否则 graceful shutdown 会一直等到超时再被取消并打印异常堆栈。
+        try:
+            sse.close_all()
+        except Exception:
+            pass
+        _orig_handle_exit(sig, frame)
+
+    server.handle_exit = _handle_exit
+    server.run()
 
 
 if __name__ == "__main__":
