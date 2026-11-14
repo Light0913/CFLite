@@ -3,6 +3,12 @@
 {% block content %}
 <div class="card table-wrap">
   <h2>排行榜</h2>
+  <p>
+    <a class="btn" href="/contests/{{ contest.id }}/scoreboard/export.html">导出为 HTML</a>
+    {% if current_user and current_user.type == 'admin' %}
+    <a class="btn btn-secondary" href="/contests/{{ contest.id }}/scoreboard/codes.zip">导出所有代码</a>
+    {% endif %}
+  </p>
   <table class="scoreboard">
     <thead>
       <tr>

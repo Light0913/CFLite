@@ -63,6 +63,39 @@ def _restart_now() -> None:
     time.sleep(0.8)
     os._exit(EXIT_RESTART)
 
+
+def _scoreboard_html(contest: dict, problems: list[dict], rows: list[dict]) -> str:
+    """生成不依赖任何 JS / 外部 CSS 的独立排行榜 HTML。"""
+    esc = html.escape
+    parts = [
+        "<!doctype html><html lang='zh-CN'><head><meta charset='utf-8'>",
+        "<title>排行榜 · " + esc(contest.get("title") or "") + "</title>",
+        "<style>body{font-family:system-ui,'Microsoft YaHei',sans-serif;margin:24px;color:#111}"
+        "table{border-collapse:collapse;width:100%}"
+        "th,td{border:1px solid #d0d7de;padding:6px 10px;text-align:center}"
+        "th{background:#f6f8fa}td.name{text-align:left}"
+        ".muted{color:#6b7280;font-size:12px}.ac{color:#15803d}.fail{color:#b91c1c}</style></head><body>",
+        "<h2>" + esc(contest.get("title") or "") + " · 排行榜</h2>",
+        "<table><thead><tr><th>#</th><th>用户</th>",
+    ]
+    for p in problems:
+        parts.append("<th>%s<br><span class='muted'>%s 分</span></th>" % (p["id"], p.get("base_score", 0)))
+    parts.append("<th>Hack</th><th>总分</th></tr></thead><tbody>")
+    for r in rows:
+        parts.append("<tr><td>%s</td><td class='name'>%s</td>" % (r["rank"], esc(r["username"])))
+        for p in problems:
+            cell = r["problems"].get(p["id"])
+            if not cell or cell.get("status") == "unattempted":
+                parts.append("<td>—</td>")
+            else:
+                cls = "ac" if cell.get("status") == "ac" else "fail"
+                parts.append("<td class='%s'>%s<br><span class='muted'>%s 次</span></td>" % (
+                    cls, cell.get("score"), cell.get("attempts")))
+        parts.append("<td>+%s -%s</td><td>%s</td></tr>" % (
+            r["hack_success"], r["hack_fail"], r["total"]))
+    parts.append("</tbody></table></body></html>")
+    return "".join(parts)
+
 _bg_tasks: set = set()
 
 
@@ -437,6 +470,42 @@ def _register_routes(app: FastAPI) -> None:
             p["base_score"] = int(base_scores.get(p["id"], 0))
         return templates.TemplateResponse(request, "scoreboard.html", _ctx(request, u,
             rows=rows, problems=problems))
+
+    @app.get("/contests/{cid}/scoreboard/export.html")
+    async def export_scoreboard_html(cid: str, u: dict | None = Depends(current_user)):
+        contest = state.contest_repo.current()
+        if not contest or contest["id"] != cid:
+            raise HTTPException(404)
+        rows = services.compute_scoreboard(contest)
+        problems = state.problem_repo.all()
+        base_scores = (contest.get("score") or {}).get("base_scores") or {}
+        for p in problems:
+            p["base_score"] = int(base_scores.get(p["id"], 0))
+        content = _scoreboard_html(contest, problems, rows)
+        return Response(content, media_type="text/html; charset=utf-8",
+                        headers={"Content-Disposition": 'attachment; filename="scoreboard.html"'})
+
+    @app.get("/contests/{cid}/scoreboard/codes.zip")
+    async def export_codes_zip(cid: str, u: dict = Depends(require_admin)):
+        contest = state.contest_repo.current()
+        if not contest or contest["id"] != cid:
+            raise HTTPException(404)
+        rows = services.compute_scoreboard(contest)
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+            for r in rows:
+                for pid, cell in sorted(r["problems"].items()):
+                    if cell.get("status") != "ac" or not cell.get("sub_id"):
+                        continue
+                    sub = state.db.query_one(
+                        "SELECT source_path FROM submissions WHERE id=?", (cell["sub_id"],))
+                    sp = pathlib.Path(sub["source_path"]) if sub and sub["source_path"] else None
+                    if not sp or not sp.is_file():
+                        continue
+                    zf.writestr("%s/%s%s" % (r["username"], pid, sp.suffix or ".cpp"),
+                                sp.read_bytes())
+        return Response(buf.getvalue(), media_type="application/zip",
+                        headers={"Content-Disposition": 'attachment; filename="codes.zip"'})
 
     # ========== 提交 ==========
     @app.post("/api/submit")
