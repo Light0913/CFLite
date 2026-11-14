@@ -154,13 +154,8 @@ def can_view_source(viewer, sub, contest) -> bool:
 
 
 def can_view_hack(viewer, hack_row, contest) -> bool:
-    status = lifecycle.contest_status(contest) if contest else "finalized"
-    if status in ("draining", "rejudging", "finalized"):
-        return True
-    if viewer and (viewer["type"] == "admin" or viewer["id"] == hack_row["hacker_id"]
-                   or viewer["id"] == hack_row["victim_id"]):
-        return True
-    return False
+    # 登录用户均可查看；具体能看到哪些内容由 hack_page 按身份/比赛状态裁剪
+    return viewer is not None
 
 
 def _sub_view(sid: int) -> dict | None:
@@ -616,16 +611,22 @@ def _register_routes(app: FastAPI) -> None:
         contest = state.contest_repo.current()
         if not can_view_hack(u, h, contest):
             raise HTTPException(403)
+        status = lifecycle.contest_status(contest) if contest else "finalized"
+        is_admin = bool(u and u.get("type") == "admin")
+        is_owner = bool(u and (u["id"] == h["hacker_id"] or u["id"] == h["victim_id"]))
+        show_detail = bool(is_admin or is_owner or status in ("draining", "rejudging", "finalized"))
         hacker = state.user_store.get(h["hacker_id"])
         victim = state.user_store.get(h["victim_id"])
         h["hacker_name"] = hacker["username"] if hacker else f"#{h['hacker_id']}"
         h["victim_name"] = victim["username"] if victim else f"#{h['victim_id']}"
         hack_input = ""
-        ip = pathlib.Path(h["input_path"]) if h["input_path"] else None
-        if ip and ip.is_file():
-            hack_input = ip.read_text("utf-8", errors="replace")
+        if show_detail:
+            ip = pathlib.Path(h["input_path"]) if h["input_path"] else None
+            if ip and ip.is_file():
+                hack_input = ip.read_text("utf-8", errors="replace")
         return templates.TemplateResponse(request, "hack.html", _ctx(request, u, hack=h,
-                                                                     hack_input=hack_input))
+                                                                     hack_input=hack_input,
+                                                                     show_detail=show_detail))
 
     @app.get("/api/hacks/{hid}/stream")
     async def hack_stream(request: Request, hid: int):
@@ -665,15 +666,10 @@ def _register_routes(app: FastAPI) -> None:
         contest = state.contest_repo.current()
         status = lifecycle.contest_status(contest) if contest else "finalized"
         is_admin = bool(u and u.get("type") == "admin")
-        show_all = is_admin or status in ("draining", "rejudging", "finalized")
-        if not show_all and not u:
+        if not u:
             raise HTTPException(403)
-        if show_all:
-            hacks = state.db.query("SELECT * FROM hacks WHERE contest_id=? ORDER BY id DESC LIMIT 500", (cid,))
-        else:
-            hacks = state.db.query(
-                "SELECT * FROM hacks WHERE contest_id=? AND (hacker_id=? OR victim_id=?) "
-                "ORDER BY id DESC LIMIT 500", (cid, u["id"], u["id"]))
+        hacks = state.db.query("SELECT * FROM hacks WHERE contest_id=? ORDER BY id DESC LIMIT 500", (cid,))
+        show_all = True
         for h in hacks:
             hu = state.user_store.get(h["hacker_id"])
             vu = state.user_store.get(h["victim_id"])

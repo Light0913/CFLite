@@ -21,6 +21,9 @@
       {% endif %}
     </table>
   </div>
+  {% if not show_detail %}
+  <p class="hint">比赛进行中，只能看到评测结果；Hack 详情（输入）将于比赛结束后公开。</p>
+  {% endif %}
   {% if hack_input %}
   <hr>
   <h3>Hack 输入</h3>
