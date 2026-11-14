@@ -53,7 +53,7 @@
         </form>
         {% endif %}
 
-        {% if prob.has_hack and current_user.type != 'banned' and my_ac %}
+        {% if prob.has_hack and current_user.type != 'banned' and my_ac and contest_status == 'running' %}
         <hr>
         <form method="post" action="/api/problems/{{ prob.id }}/lock"
               onsubmit="return confirm('锁定后不可撤销，且该题将不能再提交解答。确定锁定本题？')">
