@@ -30,7 +30,6 @@ Windows 10/11 单机在线判题工具（OJ）。基于 **FastAPI + Jinja2 + 原
 ```bat
 build.bat     :: 检测环境 + pip 安装依赖 + 编译 judge.exe + 初始化 + 生成 run.bat
 run.bat       :: 启动（等价于 python main.py）
-stop.bat      :: 停止（按端口结束进程，可传端口号）
 ```
 
 - 默认管理员：`admin` / `admin123`（**登录后请立即到 `/settings` 修改密码**）。
