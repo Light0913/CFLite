@@ -111,6 +111,11 @@ def registration_open(contest: dict | None) -> tuple[bool, str]:
     if not contest:
         return False, "无当前比赛"
     reg = contest.get("registration") or {}
+    enabled = state.db.get_runtime_setting("registration.enabled", reg.get("enabled", False))
+    meta = state.db.get_runtime_setting_meta("registration.enabled") or {}
+    if meta.get("updated_by") is not None:
+        # 管理员在设置页手动开关过：以手动开关为准，可越过 close_at 截止时间
+        return (True, "") if enabled else (False, "注册通道已关闭")
     close_at = reg.get("close_at")
     if close_at:
         try:
@@ -118,7 +123,6 @@ def registration_open(contest: dict | None) -> tuple[bool, str]:
                 return False, "注册通道已关闭（已到截止时间）"
         except Exception:
             pass
-    enabled = state.db.get_runtime_setting("registration.enabled", reg.get("enabled", False))
     if not enabled:
         return False, "注册通道已关闭"
     return True, ""
@@ -997,14 +1001,14 @@ def _register_admin_routes(app: FastAPI) -> None:
     @app.get("/admin/settings", response_class=HTMLResponse)
     async def admin_settings(request: Request, u: dict = Depends(require_admin)):
         contest = state.contest_repo.current()
-        enabled = state.db.get_runtime_setting(
-            "registration.enabled", contest.get("registration", {}).get("enabled", False) if contest else False)
+        reg_ok, reg_reason = registration_open(contest)
         meta = state.db.get_runtime_setting_meta("registration.enabled")
         audits = state.db.query("SELECT * FROM admin_audit_log ORDER BY id DESC LIMIT 20")
         for a in audits:
             au = state.user_store.get(a["admin_id"])
             a["admin_name"] = au["username"] if au else f"#{a['admin_id']}"
-        setting = {"enabled": bool(enabled),
+        setting = {"enabled": reg_ok,
+                   "reason": reg_reason,
                    "close_at": (contest or {}).get("registration", {}).get("close_at"),
                    "updated_at": meta.get("updated_at"),
                    "updated_by_name": (state.user_store.get(meta["updated_by"]) or {}).get("username")
