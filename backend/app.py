@@ -95,6 +95,17 @@ def registration_open(contest: dict | None) -> tuple[bool, str]:
     return True, ""
 
 
+def _asset_ver() -> int:
+    """静态资源版本号（按 css/js 的修改时间），用于浏览器缓存刷新。"""
+    v = 0
+    for name in ("css/style.css", "js/app.js"):
+        try:
+            v = max(v, int((config.DIRS["static"] / name).stat().st_mtime))
+        except Exception:
+            pass
+    return v
+
+
 def _ctx(request: Request, u: dict | None = None, **kw) -> dict:
     contest = state.contest_repo.current()
     status = lifecycle.contest_status(contest) if contest else "finalized"
@@ -103,6 +114,7 @@ def _ctx(request: Request, u: dict | None = None, **kw) -> dict:
         "request": request, "current_user": u, "contest": contest,
         "contest_status": status, "registration_enabled": reg_ok,
         "registration_reason": reg_reason, "show_contest_nav": True,
+        "asset_ver": _asset_ver(),
     }
     ctx.update(kw)
     return ctx

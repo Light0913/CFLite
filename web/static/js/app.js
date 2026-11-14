@@ -247,11 +247,35 @@
     });
   }
 
+  // 管理员「重载」：重新扫描题目/比赛/用户 + 清空模板缓存，然后强制刷新页面
+  function initReload() {
+    var btn = document.getElementById("reload-btn");
+    if (!btn) return;
+    btn.addEventListener("click", function (e) {
+      e.preventDefault();
+      var old = btn.textContent;
+      btn.textContent = "重载中…";
+      fetch("/api/admin/reload", { method: "POST" })
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          if (d && d.errors && d.errors.length) {
+            alert("重载完成，但有错误：\n" + d.errors.join("\n"));
+          }
+          location.href = location.pathname + "?r=" + Date.now();
+        })
+        .catch(function () {
+          btn.textContent = old;
+          alert("重载失败，请查看服务端日志");
+        });
+    });
+  }
+
   document.addEventListener("DOMContentLoaded", function () {
     initBell();
     initSubmissionStream();
     initHackStream();
     initRegistrationPolling();
     initCodeCopy();
+    initReload();
   });
 })();

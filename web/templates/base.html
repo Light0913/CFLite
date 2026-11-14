@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{% block title %}CFLite{% endblock %}</title>
-<link rel="stylesheet" href="/static/css/style.css">
+<link rel="stylesheet" href="/static/css/style.css?v={{ asset_ver }}">
 <link rel="stylesheet" href="/static/katex/katex.min.css">
 </head>
 <body>
@@ -24,7 +24,7 @@
     {% if current_user %}
       <a href="/settings">{{ current_user.username }}</a>
       · <a href="/submissions">我的提交</a>
-      {% if current_user.type == 'admin' %} · <a href="/admin/users">管理</a>{% endif %}
+      {% if current_user.type == 'admin' %} · <a href="/admin/users">管理</a> · <a href="#" id="reload-btn" title="重载题目/比赛/前端缓存（无需重启）">🔄 重载</a>{% endif %}
       · <a href="#" onclick="fetch('/api/logout',{method:'POST'}).then(()=>location='/login');return false;">退出</a>
     {% else %}
       <a href="/login">登录</a>
@@ -60,7 +60,7 @@
 
 <footer class="footer">CFLite · 单机判题系统 · © 2026</footer>
 
-<script src="/static/js/app.js"></script>
+<script src="/static/js/app.js?v={{ asset_ver }}"></script>
 <script>
 (function(){
   var cd = document.getElementById('countdown');
