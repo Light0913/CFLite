@@ -74,7 +74,9 @@ def _scoreboard_html(contest: dict, problems: list[dict], rows: list[dict]) -> s
         "table{border-collapse:collapse;width:100%}"
         "th,td{border:1px solid #d0d7de;padding:6px 10px;text-align:center}"
         "th{background:#f6f8fa}td.name{text-align:left}"
-        ".muted{color:#6b7280;font-size:12px}.ac{color:#15803d}.fail{color:#b91c1c}</style></head><body>",
+        ".muted{color:#6b7280;font-size:12px}.ac{color:#15803d}.fail{color:#b91c1c}"
+        ".hack-plus{color:#16a34a;font-weight:600}.hack-minus{color:#dc2626;font-weight:600}"
+        "</style></head><body>",
         "<h2>" + esc(contest.get("title") or "") + " · 排行榜</h2>",
         "<table><thead><tr><th>#</th><th>用户</th>",
     ]
@@ -91,8 +93,8 @@ def _scoreboard_html(contest: dict, problems: list[dict], rows: list[dict]) -> s
                 cls = "ac" if cell.get("status") == "ac" else "fail"
                 parts.append("<td class='%s'>%s<br><span class='muted'>%s 次</span></td>" % (
                     cls, cell.get("score"), cell.get("attempts")))
-        parts.append("<td>+%s -%s</td><td>%s</td></tr>" % (
-            r["hack_success"], r["hack_fail"], r["total"]))
+        parts.append("<td><span class='hack-plus'>+%s</span> <span class='hack-minus'>-%s</span></td>"
+                     "<td>%s</td></tr>" % (r["hack_success"], r["hack_fail"], r["total"]))
     parts.append("</tbody></table></body></html>")
     return "".join(parts)
 
