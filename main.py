@@ -82,6 +82,18 @@ def main() -> None:
 
     host = os.environ.get("CFLITE_HOST", "0.0.0.0")
     port = int(os.environ.get("CFLITE_PORT", "8000"))
+
+    if "--reload" in sys.argv or os.environ.get("CFLITE_RELOAD") == "1":
+        # 开发模式：监听 backend/ 与 web/，改代码自动重启 worker。
+        # 只监听代码目录，避免 data/、temp/、submissions/ 的运行时变化触发重启。
+        print("CFLite 以 --reload 模式启动（改代码自动生效）")
+        uvicorn.run(
+            "backend.app:create_app", factory=True,
+            host=host, port=port, log_level="info", timeout_graceful_shutdown=3,
+            reload=True, reload_dirs=[str(ROOT / "backend"), str(ROOT / "web")],
+        )
+        return
+
     app = create_app()
     print("CFLite 启动成功，访问 http://127.0.0.1:%d" % port)
     # timeout_graceful_shutdown：SSE 等长连接不会主动断开，限制关服等待时间，避免 Ctrl+C 后卡很久

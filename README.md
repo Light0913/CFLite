@@ -81,7 +81,7 @@ Ctime = D × 25 / 12
 
 ```
 CFLite/
-  main.py  build.bat  run.bat  stop.bat  requirements.txt  README.md
+  main.py  build.bat  run.bat  requirements.txt  README.md
   users.json            # 用户（id + username + SHA256），不进 Git
   backend/              # FastAPI 后端
     app.py  services.py  judge.py  hack.py  lifecycle.py  scoring.py
@@ -148,7 +148,8 @@ cases:
 
 - **提示「未找到 MinGW-w64」**：安装 winlibs UCRT 包，或设置 `MINGW_HOME`；若已有 `bin/judge.exe` 可不装。
 - **启动报缺依赖**：运行 `build.bat`；`vendor/` 已含纯 Python 依赖兜底。
-- **端口被占用**：`set CFLITE_PORT=8001` 后启动，或 `stop.bat 8000`。
+- **端口被占用**：`set CFLITE_PORT=8001` 后启动；停止服务在运行 `main.py` 的控制台按 `Ctrl+C`，或按端口结束进程：
+  `Get-NetTCPConnection -LocalPort 8000 | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force }`。
 - **重置密码**：`python tools/hash_password.py <明文>` 得到哈希后写入 `users.json`。
 - **重新下载 KaTeX**：`python tools/get_katex.py`。
 - **清空运行数据**：删除 `data/cflite.db`、`submissions/`、`hacks/`、`temp/`、`build/` 后重启（会重新初始化）。

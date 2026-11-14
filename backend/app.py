@@ -835,6 +835,28 @@ def _register_admin_routes(app: FastAPI) -> None:
             raise HTTPException(400, str(e))
         return RedirectResponse("/admin/users", status_code=303)
 
+    @app.post("/api/admin/reload")
+    async def admin_reload(u: dict = Depends(require_admin)):
+        """热重载题目 / 比赛 / 用户与模板缓存，无需重启服务。"""
+        errs: list[str] = []
+        try:
+            errs += state.problem_repo.scan()
+        except Exception as e:
+            errs.append("problems: " + str(e))
+        try:
+            errs += state.contest_repo.scan()
+        except Exception as e:
+            errs.append("contests: " + str(e))
+        try:
+            state.user_store.reload()
+        except Exception as e:
+            errs.append("users: " + str(e))
+        try:
+            templates.env.cache.clear()
+        except Exception:
+            pass
+        return {"ok": not errs, "errors": errs}
+
     @app.get("/admin/submissions", response_class=HTMLResponse)
     async def admin_submissions(request: Request, u: dict = Depends(require_admin)):
         subs = state.db.query("SELECT * FROM submissions ORDER BY id DESC LIMIT 500")
