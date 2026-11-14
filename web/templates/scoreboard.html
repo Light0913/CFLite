@@ -22,7 +22,7 @@
           {% set cell = r.problems.get(p.id) %}
           <td class="prob {{ 'cell-ac' if cell and cell.status == 'ac' else ('cell-fail' if cell and cell.status in ('failed','hacked') else '') }}">
             {% if cell and cell.status != 'unattempted' %}
-              {% if cell.locked %}<strong>{{ cell.score }}</strong>{% else %}{{ cell.score }}{% endif %}<br>
+              {% if cell.sub_id %}<a href="/submissions/{{ cell.sub_id }}">{% endif %}{% if cell.locked %}<strong>{{ cell.score }}</strong>{% else %}{{ cell.score }}{% endif %}{% if cell.sub_id %}</a>{% endif %}<br>
               <span class="muted" style="font-size:11px">{{ cell.attempts }} 次</span>
             {% else %}—{% endif %}
           </td>

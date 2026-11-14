@@ -14,7 +14,7 @@
         <td>{{ h.hacker_name }}</td>
         <td>{{ h.victim_name }}</td>
         <td>{{ h.problem_id }}</td>
-        <td class="num">#{{ h.target_submission_id }}</td>
+        <td class="num"><a href="/submissions/{{ h.target_submission_id }}">#{{ h.target_submission_id }}</a></td>
         <td>
           <span class="{% if h.verdict == 'SUCCESS' %}verdict-ac{% elif h.verdict == 'FAIL' %}verdict-fail{% elif h.verdict == 'INVALID_INPUT' %}verdict-gray{% else %}verdict-se{% endif %}">{{ h.verdict|verdict_name }}</span>
         </td>

@@ -198,15 +198,18 @@ def compute_scoreboard(contest: dict) -> list[dict]:
             acs = [s for s in psubs
                    if s.get("verdict") in ACLIKE and not s.get("is_pretest_1_failure")]
             status = "unattempted"
+            sub_id = None
             if acs:
                 status = "ac"
                 ac = min(acs, key=lambda s: s.get("id", 0))
+                sub_id = ac.get("id")
                 if ac.get("created_at") and (first_ac is None or ac["created_at"] < first_ac):
                     first_ac = ac["created_at"]
             else:
                 current = [s for s in psubs if not s["superseded"]]
                 cur = max(current, key=lambda s: s["id"]) if current else None
                 if cur:
+                    sub_id = cur.get("id")
                     if cur["verdict"] == V_CANCELLED:
                         status = "cancelled"
                     elif cur["verdict"] == V_HACKED:
@@ -214,7 +217,7 @@ def compute_scoreboard(contest: dict) -> list[dict]:
                     else:
                         status = "failed"
             problems[pid] = {
-                "score": score, "status": status,
+                "score": score, "status": status, "sub_id": sub_id,
                 "attempts": len([s for s in psubs if s.get("verdict") != V_CE]),
                 "locked": pid in locked_problems.get(uid, set()),
             }

@@ -6,7 +6,7 @@
   <div id="hack-status" data-hid="{{ hack.id }}" data-final="{{ '1' if hack.status == 'done' else '0' }}">
     <table>
       <tr><td>Hacker</td><td>{{ hack.hacker_name }}</td></tr>
-      <tr><td>Victim</td><td>{{ hack.victim_name }}（提交 #{{ hack.target_submission_id }}）</td></tr>
+      <tr><td>Victim</td><td>{{ hack.victim_name }}（<a href="/submissions/{{ hack.target_submission_id }}">提交 #{{ hack.target_submission_id }}</a>）</td></tr>
       <tr><td>题目</td><td><a href="/problems/{{ hack.problem_id }}">{{ hack.problem_id }}</a></td></tr>
       <tr><td>状态</td><td id="hack-verdict">
         {% if hack.status == 'done' %}
