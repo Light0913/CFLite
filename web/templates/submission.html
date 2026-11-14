@@ -8,6 +8,12 @@
     用户 {{ sub.username }} ·
     语言 {{ sub.language }} · {{ sub.created_at }}
   </p>
+  {% if hacked_by %}
+  <p class="hint">
+    该提交被 Hack：
+    {% for h in hacked_by %}<a href="/hacks/{{ h.id }}">Hack #{{ h.id }}</a>{% if not loop.last %}、{% endif %}{% endfor %}
+  </p>
+  {% endif %}
   <div id="live-status" data-sid="{{ sub.id }}">
     {% include "partials/submission_status.html" %}
   </div>

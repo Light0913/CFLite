@@ -496,9 +496,13 @@ def _register_routes(app: FastAPI) -> None:
                     source_img = base64.b64encode(png).decode()
                 else:
                     source_code = raw
+        hacked_by = state.db.query(
+            "SELECT id, verdict, points_delta FROM hacks "
+            "WHERE target_submission_id=? AND status='done' ORDER BY id", (sid,))
         return templates.TemplateResponse(request, "submission.html", _ctx(request, u, sub=sub,
                                                                          source_code=source_code,
-                                                                         source_img=source_img))
+                                                                         source_img=source_img,
+                                                                         hacked_by=hacked_by))
 
     @app.get("/api/submissions/{sid}/stream")
     async def submission_stream(request: Request, sid: int):
