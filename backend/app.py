@@ -265,6 +265,11 @@ def create_app() -> FastAPI:
     async def _startup():
         _spawn(lifecycle.tick_lifecycle())
 
+    @app.on_event("shutdown")
+    async def _shutdown():
+        # 让长期挂起的 SSE 流正常结束，避免 graceful shutdown 超时后被取消并打印异常
+        sse.close_all()
+
     return app
 
 
@@ -725,6 +730,8 @@ def _register_routes(app: FastAPI) -> None:
                     except asyncio.TimeoutError:
                         yield ": keepalive\n\n"
                         continue
+                    if ev.get("event") == "shutdown":
+                        break
                     yield sse._sse(ev.get("event", "message"), ev)
                     if ev.get("event") == "final":
                         break

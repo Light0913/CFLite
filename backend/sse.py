@@ -30,6 +30,18 @@ def publish_user(uid: int, ev: dict) -> None:
     _publish_to(_user_subscribers, uid, ev)
 
 
+def close_all() -> None:
+    """应用关闭时向所有 SSE 订阅推送哨兵，让流正常结束（避免 graceful shutdown 超时被取消）。"""
+    sentinel = {"event": "shutdown"}
+    for d in (_sub_subscribers, _hack_subscribers, _user_subscribers):
+        for qs in list(d.values()):
+            for q in list(qs):
+                try:
+                    q.put_nowait(sentinel)
+                except asyncio.QueueFull:
+                    pass
+
+
 def _sse(name: str, data: dict) -> str:
     return f"event: {name}\ndata: {json.dumps(data, ensure_ascii=False)}\n\n"
 
@@ -60,6 +72,8 @@ async def gen_submission_stream(sid: int, request, sub: dict):
             except asyncio.TimeoutError:
                 yield ": keepalive\n\n"
                 continue
+            if ev.get("event") == "shutdown":
+                break
             yield _sse(ev.get("event", "message"), ev)
             if ev.get("event") == "final" and ev.get("stage") == "system_tests":
                 break
@@ -105,6 +119,8 @@ async def gen_notifications_stream(uid: int, request):
             except asyncio.TimeoutError:
                 yield ": keepalive\n\n"
                 continue
+            if ev.get("event") == "shutdown":
+                break
             yield _sse(ev.get("event", "notification"), ev)
     finally:
         try:
