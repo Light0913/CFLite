@@ -883,16 +883,21 @@ def _register_admin_routes(app: FastAPI) -> None:
             nu = state.user_store.create(username, password, type_ if type_ in ("default", "admin", "banned") else "default")
         except ValueError as e:
             raise HTTPException(400, str(e))
+        state.db.write_audit_log(u["id"], "create_user", f"user:{nu['id']}",
+                                 None, f"{nu['username']}({nu['type']})")
         return RedirectResponse("/admin/users", status_code=303)
 
     @app.post("/api/admin/users/{uid}/type")
     async def admin_set_type(uid: int, type_: str = Form(...), u: dict = Depends(require_admin)):
         if uid == u["id"]:
             raise HTTPException(400, "不能修改自己的用户类型")
+        old = state.user_store.get(uid)
         try:
             state.user_store.update_type(uid, type_)
         except ValueError as e:
             raise HTTPException(400, str(e))
+        state.db.write_audit_log(u["id"], "set_user_type", f"user:{uid}",
+                                 (old or {}).get("type"), type_)
         return RedirectResponse("/admin/users", status_code=303)
 
     @app.post("/api/admin/users/{uid}/password")
@@ -901,16 +906,20 @@ def _register_admin_routes(app: FastAPI) -> None:
             state.user_store.reset_password(uid, password)
         except ValueError as e:
             raise HTTPException(400, str(e))
+        state.db.write_audit_log(u["id"], "reset_password", f"user:{uid}", None, "***")
         return RedirectResponse("/admin/users", status_code=303)
 
     @app.post("/api/admin/users/{uid}/delete")
     async def admin_delete_user(uid: int, u: dict = Depends(require_admin)):
         if uid == u["id"]:
             raise HTTPException(400, "不能删除自己")
+        old = state.user_store.get(uid)
         try:
             state.user_store.delete(uid)
         except ValueError as e:
             raise HTTPException(400, str(e))
+        state.db.write_audit_log(u["id"], "delete_user", f"user:{uid}",
+                                 (old or {}).get("username"), None)
         return RedirectResponse("/admin/users", status_code=303)
 
     @app.post("/api/admin/reload")
@@ -934,6 +943,8 @@ def _register_admin_routes(app: FastAPI) -> None:
         except Exception:
             pass
         changed = _code_changed(_PROC_START)
+        state.db.write_audit_log(u["id"], "reload", "system", None,
+                                 "restart" if changed else "data")
         if changed:
             background.add_task(_restart_now)
         return {"ok": not errs, "errors": errs, "restart": changed}
@@ -941,6 +952,7 @@ def _register_admin_routes(app: FastAPI) -> None:
     @app.post("/api/admin/restart")
     async def admin_restart(background: BackgroundTasks, u: dict = Depends(require_admin)):
         """强制重启服务（run.bat 守护循环会自动拉起）。"""
+        state.db.write_audit_log(u["id"], "restart", "system", None, "restart")
         background.add_task(_restart_now)
         return {"ok": True, "restart": True}
 
