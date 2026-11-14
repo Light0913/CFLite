@@ -24,7 +24,11 @@ async def run_and_track(sid: int, attempt_id: str, run_stage: str,
         d = json.loads(row["detail_json"] or "{}")
         return d.get(run_stage) or {}
 
+    ce_text = [""]
+
     async def on_event(ev):
+        if ev.get("event") == "compile_error":
+            ce_text[0] = ev.get("stderr") or ""
         if ev.get("event") == "final":
             # 最终事件在 finalize 之后再统一发布，确保前端拿到时 status 已是 done
             return
@@ -45,6 +49,8 @@ async def run_and_track(sid: int, attempt_id: str, run_stage: str,
 
     async with _sem:
         final = await judge_mod.run_judge_stage(sub, run_stage, on_event)
+    if final.get("verdict") == "CE" and ce_text[0] and not final.get("checker_comment"):
+        final["checker_comment"] = ce_text[0]
     finalize_stage(sid, attempt_id, run_stage, final)
     if publish_final:
         sse.publish(sid, {**final, "stage": run_stage})

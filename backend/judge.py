@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import json
 import pathlib
+import shutil
 import subprocess
 import threading
 
@@ -33,6 +34,17 @@ def build_job(sub: dict, run_stage: str) -> dict:
     contest = state.contest_repo.current()
     cases = prob["cases"].get(run_stage, [])
     temp_dir = config.DIRS["temp"] / f"oj-{sub['id']}-{sub['attempt_id']}"
+    # 把源码复制进编译工作目录：AppContainer 只授权 workdir + MinGW 目录，
+    # 原源码位于 submissions/ 下未被授权，会导致编译期读不到文件而 CE。
+    build_dir = temp_dir / "build"
+    build_dir.mkdir(parents=True, exist_ok=True)
+    source_path = sub["source_path"]
+    try:
+        src_copy = build_dir / "main.cpp"
+        shutil.copyfile(source_path, src_copy)
+        source_path = str(src_copy)
+    except Exception:
+        pass
     return {
         "submission_id": sub["id"],
         "attempt_id": sub["attempt_id"],
@@ -41,7 +53,7 @@ def build_job(sub: dict, run_stage: str) -> dict:
         "language": sub["language"],
         "problem_dir": prob["problem_dir"],
         "testdata_dir": prob["testdata_dir"],
-        "source_path": sub["source_path"],
+        "source_path": source_path,
         "time_limit_ms": prob["time_ms"],
         "memory_limit_mb": prob["memory_mb"],
         "compile_time_limit_ms": prob["compile_time_ms"],

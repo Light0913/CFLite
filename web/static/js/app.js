@@ -210,7 +210,7 @@
 
   // 为 Markdown 代码块（样例输入/输出等）添加复制按钮
   function initCodeCopy() {
-    document.querySelectorAll(".md pre").forEach(function (pre) {
+    document.querySelectorAll(".md pre, pre.code-block").forEach(function (pre) {
       if (pre.parentNode && pre.parentNode.classList && pre.parentNode.classList.contains("code-wrap")) return;
       var wrap = document.createElement("div");
       wrap.className = "code-wrap";
