@@ -116,7 +116,10 @@ static CompileResult compile_source(const Job& job, const std::wstring& workdir)
     opts.active_process_limit = 0;  // g++ 需要多个子进程
     opts.use_appcontainer = true;
     for (auto& d : job.mingw_dirs) opts.readonly_dirs.push_back(utf8_to_wide(d));
-    opts.env_path = utf8_to_wide(job.mingw_dirs.empty() ? "" : (job.mingw_dirs[2] + ";" + job.mingw_dirs[3]));
+    std::string epath;
+    if (job.mingw_dirs.size() > 2) epath = job.mingw_dirs[2];
+    if (job.mingw_dirs.size() > 3) epath += ";" + job.mingw_dirs[3];
+    opts.env_path = utf8_to_wide(epath);
 
     RunResult rr = run_in_sandbox(opts);
     if (rr.exit_code == 0 && file_exists(r.exe)) {

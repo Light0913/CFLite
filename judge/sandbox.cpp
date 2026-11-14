@@ -162,6 +162,14 @@ RunResult run_in_sandbox(const RunOptions& opts) {
                                  flags, (LPVOID)env.data(), opts.workdir.c_str(),
                                  &si.StartupInfo, &pi);
     }
+    if (!created && use_ac) {
+        // AppContainer 下创建进程失败（如环境/权限限制）→ 回退为仅 Job Object 隔离
+        flags &= ~EXTENDED_STARTUPINFO_PRESENT;
+        si.StartupInfo.cb = sizeof(STARTUPINFO);
+        created = CreateProcessW(opts.exe.c_str(), cmd.data(), nullptr, nullptr, TRUE,
+                                 flags, (LPVOID)env.data(), opts.workdir.c_str(),
+                                 &si.StartupInfo, &pi);
+    }
     if (!created) {
         DWORD e = GetLastError();
         CloseHandle(out_rd); CloseHandle(out_wr);
