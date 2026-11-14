@@ -29,6 +29,9 @@
         <p class="hint">请先 <a href="/login">登录</a></p>
       {% elif contest_status != 'running' %}
         <p class="hint">比赛已结束或未开始，无法提交</p>
+      {% elif locked %}
+        <p class="hint">该题已锁定，无法再提交解答（只能提交 Hack）。</p>
+        <p class="hint">✅ 已锁定 · <a href="/problems/{{ prob.id }}/sources">查看他人通过代码并 Hack</a></p>
       {% else %}
         {% if prob.type == 'submit_answer' %}
         <form method="post" action="/api/submit" enctype="multipart/form-data">
@@ -47,18 +50,12 @@
         </form>
         {% endif %}
 
-        {% if prob.has_hack and current_user.type != 'banned' %}
+        {% if prob.has_hack and current_user.type != 'banned' and my_ac %}
         <hr>
-        {% if my_ac %}
-          {% if not locked %}
-          <form method="post" action="/api/problems/{{ prob.id }}/lock"
-                onsubmit="return confirm('锁定后不可撤销，且该题将不能再提交解答。确定锁定本题？')">
-            <button class="btn btn-secondary" type="submit">🔒 锁定本题（不可逆，锁定后可 Hack）</button>
-          </form>
-          {% else %}
-          <p class="hint">✅ 已锁定 · <a href="/problems/{{ prob.id }}/sources">查看他人通过代码并 Hack</a></p>
-          {% endif %}
-        {% endif %}
+        <form method="post" action="/api/problems/{{ prob.id }}/lock"
+              onsubmit="return confirm('锁定后不可撤销，且该题将不能再提交解答。确定锁定本题？')">
+          <button class="btn btn-secondary" type="submit">🔒 锁定本题（不可逆，锁定后可 Hack）</button>
+        </form>
         {% endif %}
       {% endif %}
 
