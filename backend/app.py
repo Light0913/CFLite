@@ -122,6 +122,8 @@ def can_access_problems(viewer, contest) -> bool:
         return False
     if viewer["type"] == "admin":
         return True
+    if status == "scheduled":
+        return False  # 比赛开始前，普通用户（即使已报名）也看不到题目
     return is_registered(contest["id"], viewer["id"])
 
 

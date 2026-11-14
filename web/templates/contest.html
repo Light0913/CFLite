@@ -50,7 +50,7 @@
 <div class="col-12">
   <div class="card">
     <h3>题目</h3>
-    {% if not problems %}<p class="hint">{% if current_user and not registered %}请先报名参赛，报名后可见题目{% else %}登录后可查看比赛题目（赛后公开）{% endif %}</p>{% endif %}
+    {% if not problems %}<p class="hint">{% if contest_status == 'scheduled' %}比赛开始后可见题目{% elif current_user and not registered %}请先报名参赛，报名后可见题目{% else %}登录后可查看比赛题目（赛后公开）{% endif %}</p>{% endif %}
     {% for p in problems %}
     <div class="problem-row">
       <div><a href="/problems/{{ p.id }}">{{ p.id }}</a></div>
