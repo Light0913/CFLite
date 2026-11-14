@@ -247,27 +247,53 @@
     });
   }
 
-  // 管理员「重载」：重新扫描题目/比赛/用户 + 清空模板缓存，然后强制刷新页面
+  // 管理员「重载」：重扫数据 + 清模板缓存；若代码有更新则自动重启服务（run.bat 拉起）
   function initReload() {
     var btn = document.getElementById("reload-btn");
     if (!btn) return;
     btn.addEventListener("click", function (e) {
       e.preventDefault();
       var old = btn.textContent;
-      btn.textContent = "重载中…";
+      btn.disabled = true;
+      btn.textContent = "更新中…";
       fetch("/api/admin/reload", { method: "POST" })
         .then(function (r) { return r.json(); })
         .then(function (d) {
           if (d && d.errors && d.errors.length) {
             alert("重载完成，但有错误：\n" + d.errors.join("\n"));
           }
-          location.href = location.pathname + "?r=" + Date.now();
+          if (d && d.restart) {
+            btn.textContent = "服务重启中…";
+            waitForServer(function () {
+              location.href = location.pathname + "?r=" + Date.now();
+            });
+          } else {
+            location.href = location.pathname + "?r=" + Date.now();
+          }
         })
         .catch(function () {
+          btn.disabled = false;
           btn.textContent = old;
-          alert("重载失败，请查看服务端日志");
+          alert("更新失败，请查看服务端日志");
         });
     });
+  }
+
+  // 等待服务重启完成（轮询首页，最多约 60 秒）
+  function waitForServer(done) {
+    var tries = 0;
+    function tick() {
+      tries++;
+      fetch("/", { cache: "no-store" }).then(function (r) {
+        if (r.ok) done();
+        else retry();
+      }).catch(retry);
+    }
+    function retry() {
+      if (tries > 120) { done(); return; }
+      setTimeout(tick, 500);
+    }
+    setTimeout(tick, 800);
   }
 
   document.addEventListener("DOMContentLoaded", function () {

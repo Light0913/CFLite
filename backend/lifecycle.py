@@ -23,7 +23,8 @@ def contest_status(contest: dict) -> str:
         return rt  # 管理员提前结束比赛
     if now < contest["_end_dt"]:
         return "running"
-    return rt if rt else "draining"
+    # 时间已过结束点：进入收尾（tick_lifecycle 会接着触发赛后重测）
+    return "draining"
 
 
 def ensure_runtime(contest: dict) -> None:

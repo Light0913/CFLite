@@ -6,13 +6,16 @@ import base64
 import html
 import io
 import json
+import os
 import pathlib
 import secrets
 import shutil
+import time
 import uuid
 import zipfile
 
-from fastapi import Depends, FastAPI, File, Form, HTTPException, Request, UploadFile
+from fastapi import (BackgroundTasks, Depends, FastAPI, File, Form, HTTPException,
+                     Request, UploadFile)
 from fastapi.responses import (FileResponse, HTMLResponse, JSONResponse,
                                RedirectResponse, Response, StreamingResponse)
 from fastapi.staticfiles import StaticFiles
@@ -33,6 +36,32 @@ _BADGE_CLASS = {"verdict-ac": "badge-ac", "verdict-fail": "badge-fail",
                 "verdict-tle": "badge-tle", "verdict-ce": "badge-ce", "verdict-se": "badge-se"}
 templates.env.filters["badge_class"] = lambda v: _BADGE_CLASS.get(verdict_class(v), "badge-gray")
 templates.env.filters["markdown"] = lambda s: Markup(minimd.render(s or ""))
+
+_PROC_START = time.time()
+_CODE_SUFFIXES = (".py", ".html", ".css", ".js")
+EXIT_RESTART = 42  # run.bat 看到该退出码会自动拉起新进程
+
+
+def _code_changed(since: float) -> bool:
+    """检查 backend/*.py、main.py、web/ 下代码是否有晚于进程启动的修改。"""
+    candidates = list((config.ROOT / "backend").glob("*.py"))
+    candidates.append(config.ROOT / "main.py")
+    for p in config.DIRS["web"].rglob("*"):
+        if p.is_file() and p.suffix in _CODE_SUFFIXES:
+            candidates.append(p)
+    for p in candidates:
+        try:
+            if p.stat().st_mtime > since:
+                return True
+        except Exception:
+            pass
+    return False
+
+
+def _restart_now() -> None:
+    """由 BackgroundTasks 调用：先让响应发出，再退出进程由 run.bat 重启。"""
+    time.sleep(0.8)
+    os._exit(EXIT_RESTART)
 
 _bg_tasks: set = set()
 
@@ -166,8 +195,11 @@ def can_view_source(viewer, sub, contest) -> bool:
 
 
 def can_view_hack(viewer, hack_row, contest) -> bool:
-    # 登录用户均可查看；具体能看到哪些内容由 hack_page 按身份/比赛状态裁剪
-    return viewer is not None
+    if viewer:
+        return True
+    # 匿名用户在比赛结束后（含结束后评测期）可查看
+    status = lifecycle.contest_status(contest) if contest else "finalized"
+    return status in ("draining", "rejudging", "finalized")
 
 
 def _sub_view(sid: int) -> dict | None:
@@ -678,7 +710,7 @@ def _register_routes(app: FastAPI) -> None:
         contest = state.contest_repo.current()
         status = lifecycle.contest_status(contest) if contest else "finalized"
         is_admin = bool(u and u.get("type") == "admin")
-        if not u:
+        if not u and status not in ("draining", "rejudging", "finalized"):
             raise HTTPException(403)
         hacks = state.db.query("SELECT * FROM hacks WHERE contest_id=? ORDER BY id DESC LIMIT 500", (cid,))
         show_all = True
@@ -848,8 +880,8 @@ def _register_admin_routes(app: FastAPI) -> None:
         return RedirectResponse("/admin/users", status_code=303)
 
     @app.post("/api/admin/reload")
-    async def admin_reload(u: dict = Depends(require_admin)):
-        """热重载题目 / 比赛 / 用户与模板缓存，无需重启服务。"""
+    async def admin_reload(background: BackgroundTasks, u: dict = Depends(require_admin)):
+        """重载数据/模板；若检测到代码有更新，则自动重启进程（由 run.bat 拉起）。"""
         errs: list[str] = []
         try:
             errs += state.problem_repo.scan()
@@ -867,7 +899,16 @@ def _register_admin_routes(app: FastAPI) -> None:
             templates.env.cache.clear()
         except Exception:
             pass
-        return {"ok": not errs, "errors": errs}
+        changed = _code_changed(_PROC_START)
+        if changed:
+            background.add_task(_restart_now)
+        return {"ok": not errs, "errors": errs, "restart": changed}
+
+    @app.post("/api/admin/restart")
+    async def admin_restart(background: BackgroundTasks, u: dict = Depends(require_admin)):
+        """强制重启服务（run.bat 守护循环会自动拉起）。"""
+        background.add_task(_restart_now)
+        return {"ok": True, "restart": True}
 
     @app.get("/admin/submissions", response_class=HTMLResponse)
     async def admin_submissions(request: Request, u: dict = Depends(require_admin)):

@@ -26,12 +26,12 @@
     </div>
 
     <div class="settings-card">
-      <h3>重载前端 / 数据</h3>
+      <h3>重载前端 / 数据 / 代码</h3>
       <p class="hint">
-        重新扫描题目、比赛、用户并清空模板缓存，然后刷新页面。
-        修改了前端模板、题面、比赛配置或测试数据后，点一次即可生效，<b>无需重启服务</b>。
+        点一次会：重新扫描题目、比赛、用户，清空模板缓存；
+        若检测到 <code>backend/</code> 或 <code>web/</code> 代码有修改，则自动重启服务（约 1 秒）并等待就绪后刷新页面，<b>无需手动停服</b>。
       </p>
-      <button id="reload-btn" class="btn">🔄 立即重载</button>
+      <button id="reload-btn" class="btn">🔄 立即更新</button>
     </div>
 
     <div class="settings-card">
