@@ -433,8 +433,9 @@ def _register_routes(app: FastAPI) -> None:
     async def submit(request: Request, pid: int = Form(...), code: str = Form(""),
                      file: UploadFile | None = File(None), u: dict = Depends(require_writable)):
         contest = state.contest_repo.current()
-        if not contest or lifecycle.contest_status(contest) != "running":
-            raise HTTPException(403, "比赛已结束或未开始")
+        status = lifecycle.contest_status(contest) if contest else "finalized"
+        if not contest or status == "scheduled":
+            raise HTTPException(403, "比赛未开始")
         prob = state.problem_repo.get(pid)
         if not prob:
             raise HTTPException(404, "题目不存在")
@@ -467,7 +468,11 @@ def _register_routes(app: FastAPI) -> None:
             sp = storage.save_submission_source(pid, sid, "main.cpp", code.encode("utf-8"))
             state.db.execute("UPDATE submissions SET source_path=? WHERE id=?", (str(sp), sid))
 
-        _spawn(services.run_and_track(sid, attempt, "pretests"))
+        # 比赛进行中只跑 pretests；赛后为练习模式，跑完整测试（pretests + system），但不计入排行榜
+        if status == "running":
+            _spawn(services.run_and_track(sid, attempt, "pretests"))
+        else:
+            _spawn(services.run_full(sid, attempt))
         return RedirectResponse(f"/submissions/{sid}", status_code=303)
 
     @app.get("/submissions/{sid}", response_class=HTMLResponse)

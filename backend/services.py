@@ -6,7 +6,8 @@ import json
 import uuid
 
 from . import config, judge as judge_mod, scoring, sse, state
-from .utils import ACLIKE, V_AC, V_CANCELLED, V_CE, V_HACKED, V_PRETESTS_PASSED, now_iso, truncate
+from .utils import (ACLIKE, V_AC, V_CANCELLED, V_CE, V_HACKED, V_PRETESTS_PASSED,
+                    now_iso, parse_dt, truncate)
 
 _sem = asyncio.Semaphore(config.CPU_CORES)
 
@@ -121,10 +122,24 @@ def finalize_stage(sid: int, attempt_id: str, run_stage: str, final: dict) -> No
     on_submission_judged(sid)
 
 
+def is_practice(contest: dict, sub: dict) -> bool:
+    """比赛结束后（created_at 晚于 end_at）的提交视为练习：不计入排行榜、不覆盖正式提交。"""
+    end = (contest or {}).get("end_at")
+    created = (sub or {}).get("created_at")
+    if not end or not created:
+        return False
+    try:
+        return parse_dt(created) > parse_dt(end)
+    except Exception:
+        return False
+
+
 def on_submission_judged(sid: int) -> None:
     sub = state.db.query_one("SELECT * FROM submissions WHERE id=?", (sid,))
     if not sub or sub["status"] != "done":
         return
+    if is_practice(state.contest_repo.current(), sub):
+        return  # 练习提交不参与「最新有效提交」覆盖，避免影响排行榜
     state.db.execute("""
         UPDATE submissions SET superseded=1
         WHERE contest_id=? AND user_id=? AND problem_id=? AND id != ? AND superseded=0
@@ -136,6 +151,7 @@ def on_submission_judged(sid: int) -> None:
 def compute_scoreboard(contest: dict) -> list[dict]:
     subs = state.db.query(
         "SELECT * FROM submissions WHERE contest_id=? ORDER BY created_at ASC", (contest["id"],))
+    subs = [s for s in subs if not is_practice(contest, s)]  # 赛后的练习提交不计入排行榜
     hacks = state.db.query(
         "SELECT hacker_id, "
         "COALESCE(SUM(points_delta),0) AS pts, "
