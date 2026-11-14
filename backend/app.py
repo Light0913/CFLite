@@ -613,8 +613,8 @@ def _register_routes(app: FastAPI) -> None:
             raise HTTPException(403)
         status = lifecycle.contest_status(contest) if contest else "finalized"
         is_admin = bool(u and u.get("type") == "admin")
-        is_owner = bool(u and (u["id"] == h["hacker_id"] or u["id"] == h["victim_id"]))
-        show_detail = bool(is_admin or is_owner or status in ("draining", "rejudging", "finalized"))
+        is_hacker = bool(u and u["id"] == h["hacker_id"])
+        show_detail = bool(is_admin or is_hacker or status in ("draining", "rejudging", "finalized"))
         hacker = state.user_store.get(h["hacker_id"])
         victim = state.user_store.get(h["victim_id"])
         h["hacker_name"] = hacker["username"] if hacker else f"#{h['hacker_id']}"
