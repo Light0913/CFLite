@@ -239,6 +239,22 @@ def create_app() -> FastAPI:
     app = FastAPI(title="CFLite", docs_url=None, redoc_url=None)
     app.mount("/static", StaticFiles(directory=str(config.DIRS["static"])), name="static")
 
+    @app.middleware("http")
+    async def banned_guard(request: Request, call_next):
+        """被封禁的用户直接拒绝访问（登录、登出、静态资源除外）。"""
+        sid = request.cookies.get("session_id")
+        if sid:
+            uid = state.sessions.get(sid)
+            u = state.user_store.get(uid) if uid else None
+            if u and u.get("type") == "banned":
+                path = request.url.path
+                if path not in ("/login", "/api/login", "/api/logout") and not path.startswith("/static/"):
+                    return HTMLResponse(
+                        "<!doctype html><meta charset='utf-8'><title>403</title>"
+                        "<h2>403 · 账号已被封禁</h2><p>如有疑问请联系管理员。</p>"
+                        "<p><a href='/login'>返回登录</a></p>", status_code=403)
+        return await call_next(request)
+
     _register_routes(app)
 
     @app.on_event("startup")
@@ -261,6 +277,9 @@ def _register_routes(app: FastAPI) -> None:
         if not u:
             from urllib.parse import quote
             return RedirectResponse("/login?error=" + quote("用户名或密码错误"), status_code=303)
+        if u.get("type") == "banned":
+            from urllib.parse import quote
+            return RedirectResponse("/login?error=" + quote("账号已被封禁"), status_code=303)
         resp = RedirectResponse("/", status_code=303)
         _set_session(resp, u["id"])
         return resp
@@ -864,6 +883,8 @@ def _register_admin_routes(app: FastAPI) -> None:
 
     @app.post("/api/admin/users/{uid}/type")
     async def admin_set_type(uid: int, type_: str = Form(...), u: dict = Depends(require_admin)):
+        if uid == u["id"]:
+            raise HTTPException(400, "不能修改自己的用户类型")
         try:
             state.user_store.update_type(uid, type_)
         except ValueError as e:
